@@ -16,13 +16,14 @@ x-merge-keys: &shared_settings
   - stack.env # For using Portainer uncomment this line
   user: 'unit:root'
   volumes:
-  - /data/containers/netboxstack/netbox-media:/opt/netbox/netbox/media:z
-  - /data/containers/netboxstack/netbox-etc:/etc/netbox:z
+  - /data/containers/netboxstack/netbox-media:/opt/netbox/netbox/media
+  
 services:
+# netbox
   netbox:
     <<: *shared_settings
     ports:
-    - 8081:8080
+    - 8088:8080
     
   netbox-worker:
     <<: *shared_settings
