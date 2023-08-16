@@ -1,0 +1,88 @@
+version: '3.4'
+
+x-merge-keys: &shared_settings
+  restart: unless-stopped
+  healthcheck:
+    start_period: 300s
+    timeout: 9s
+    interval: 300s
+    test: "curl -f http://localhost:8080/api/ || exit 1"
+  image: docker.io/netboxcommunity/netbox:latest
+  depends_on:
+  - postgres
+  - redis
+  - redis-cache
+  env_file: 
+  - stack.env # For using Portainer uncomment this line
+  user: 'unit:root'
+  volumes:
+  - /data/containers/netboxstack/netbox-media:/opt/netbox/netbox/media:z
+  - /data/containers/netboxstack/netbox-etc:/etc/netbox:z
+services:
+  netbox:
+    <<: *shared_settings
+    ports:
+    - 8081:8080
+    
+  netbox-worker:
+    <<: *shared_settings
+    depends_on:
+      netbox:
+        condition: service_healthy
+    command:
+    - /opt/netbox/venv/bin/python
+    - /opt/netbox/netbox/manage.py
+    - rqworker
+    healthcheck:
+      start_period: 100s
+      timeout: 9s
+      interval: 75s
+      test: "ps -aux | grep -v grep | grep -q rqworker || exit 1"
+    
+  netbox-housekeeping:
+    <<: *shared_settings
+    depends_on:
+      netbox:
+        condition: service_healthy
+    command:
+    - /opt/netbox/housekeeping.sh
+    healthcheck:
+      start_period: 100s
+      timeout: 9s
+      interval: 75s
+      test: "ps -aux | grep -v grep | grep -q housekeeping || exit 1"
+
+  # postgres
+  postgres:
+    restart: unless-stopped
+    image: docker.io/postgres:15-alpine
+    env_file: 
+    - stack.env # For using Portainer uncomment this line
+    volumes:
+    - /data/containers/netboxstack/postgress-data:/var/lib/postgresql/data
+
+  # redis
+  redis:
+    restart: unless-stopped
+    image: docker.io/redis:7-alpine
+    command:
+    - sh
+    - -c # this is to evaluate the $REDIS_PASSWORD from the env
+    - redis-server --appendonly yes --requirepass $$REDIS_PASSWORD ## $$ because of docker-compose
+    env_file: 
+    - stack.env # For using Portainer uncomment this line
+    volumes:
+    - /data/containers/netboxstack/redis-data:/data
+  redis-cache:
+    restart: unless-stopped
+    image: redis:7-alpine
+    command:
+    - sh
+    - -c # this is to evaluate the $REDIS_PASSWORD from the env
+    - redis-server --requirepass $$REDIS_PASSWORD ## $$ because of docker-compose
+    # env_file: # For using Portainer comment out
+    #- env/redis.env # For using Portainer comment out
+    environment: # For using Portainer uncomment this line
+    - REDIS_PASSWORD=${REDIS_CACHE_PASSWORD} # For using Portainer uncomment this line
+    volumes:
+    - /data/containers/netboxstack/rediscache-data:/data
