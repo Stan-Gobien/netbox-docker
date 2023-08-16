@@ -27,8 +27,8 @@ services:
     
   netbox-worker:
     <<: *shared_settings
-    depends_on:
-      netbox:
+    #depends_on:
+      #netbox:
         #condition: service_healthy
     command:
     - /opt/netbox/venv/bin/python
@@ -42,8 +42,8 @@ services:
     
   netbox-housekeeping:
     <<: *shared_settings
-    depends_on:
-      netbox:
+    #depends_on:
+      #netbox:
         #condition: service_healthy
     command:
     - /opt/netbox/housekeeping.sh
