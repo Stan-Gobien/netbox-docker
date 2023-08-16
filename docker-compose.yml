@@ -80,8 +80,6 @@ services:
     - sh
     - -c # this is to evaluate the $REDIS_PASSWORD from the env
     - redis-server --requirepass $$REDIS_PASSWORD ## $$ because of docker-compose
-    # env_file: # For using Portainer comment out
-    #- env/redis.env # For using Portainer comment out
     environment: # For using Portainer uncomment this line
     - REDIS_PASSWORD=${REDIS_CACHE_PASSWORD} # For using Portainer uncomment this line
     volumes:
